@@ -1,0 +1,23 @@
+{
+  "moduleFileExtensions": ["ts", "js", "mjs", "cjs", "json"],
+  "rootDir": "src",
+  "testRegex": "\\.spec\\.ts$",
+  "extensionsToTreatAsEsm": [".ts"],
+  "transform": {
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        "useESM": true,
+        "tsconfig": "<rootDir>/../tsconfig.test.json"
+      }
+    ]
+  },
+  "setupFilesAfterEnv": ["<rootDir>/../test/jest.setup.ts"],
+  "testEnvironment": "node",
+  "collectCoverageFrom": [
+    "**/*.service.ts",
+    "**/dto/*.dto.ts",
+    "!**/prisma/**"
+  ],
+  "coverageDirectory": "../coverage"
+}

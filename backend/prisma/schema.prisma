@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum TradeStatus {
+  ACTIVE
+  CANCELLED
+}
+
+model Trade {
+  id           String      @id @default(uuid()) @db.Uuid
+  tradeId      String      @unique
+  symbol       String      @db.VarChar(16)
+  side         TradeSide
+  quantity     Int
+  price        Decimal     @db.Decimal(18, 4)
+  trader       String      @db.VarChar(64)
+  book         String      @db.VarChar(64)
+  counterparty String      @db.VarChar(100)
+  tradeDate    DateTime    @default(now())
+  status       TradeStatus @default(ACTIVE)
+  version      Int         @default(1)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  auditEvents  TradeAudit[]
+
+  @@index([tradeDate(sort: Desc)])
+  @@index([symbol, status])
+}
+
+model TradeAudit {
+  id         String   @id @default(uuid()) @db.Uuid
+  tradeId    String   @db.Uuid
+  action     String   @db.VarChar(16)
+  before     Json?
+  after      Json
+  createdAt  DateTime @default(now())
+  trade      Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  @@index([tradeId, createdAt(sort: Desc)])
+}

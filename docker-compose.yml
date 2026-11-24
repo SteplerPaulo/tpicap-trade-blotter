@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: trades
+      POSTGRES_PASSWORD: trades
+      POSTGRES_DB: trades
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - trades_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trades -d trades"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: fusion-trade-api:prod
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://trades:trades@db:5432/trades?schema=public
+      PORT: 3001
+      FRONTEND_ORIGIN: http://localhost:8080,http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    init: true
+    restart: unless-stopped
+
+  frontend:
+    image: fusion-trade-web:prod
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  trades_pgdata:
